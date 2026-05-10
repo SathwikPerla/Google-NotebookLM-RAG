@@ -59,6 +59,12 @@ Uses **RecursiveCharacterTextSplitter** with:
 
 This strategy recursively splits on `\n\n`, `\n`, ` `, and `` (empty string), preserving semantic boundaries (paragraphs first, then sentences, then words) before falling back to character-level splits.
 
+## Notes
+
+- The application works best with small to medium-sized PDFs on the deployed free-tier version.
+- Very large PDFs (thousands of chunks) may take longer to process due to memory and timeout limitations of free cloud hosting.
+- Locally, the application can successfully process much larger documents.
+
 ## API Endpoints
 
 ### `POST /upload`
