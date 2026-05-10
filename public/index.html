@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NoteBookLM RAG</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; max-width: 780px; margin: 48px auto; padding: 0 20px; background: #f0f2f5; color: #222; }
+    h1 { font-size: 1.6rem; margin-bottom: 28px; color: #1a73e8; }
+    .card { background: #fff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 14px; }
+    input[type="file"] { display: block; margin-bottom: 10px; }
+    input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+    button { padding: 9px 22px; background: #1a73e8; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; margin-top: 10px; }
+    button:hover { background: #1558b0; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    #status { margin-top: 12px; font-size: 0.9rem; }
+    #answer { margin-top: 14px; white-space: pre-wrap; line-height: 1.6; font-size: 0.97rem; }
+    #sources { margin-top: 10px; font-size: 0.82rem; color: #888; }
+    .ok { color: #2e7d32; }
+    .err { color: #c62828; }
+    .muted { color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>NoteBookLM RAG</h1>
+
+  <div class="card">
+    <h2>Step 1 — Upload PDF</h2>
+    <input type="file" id="fileInput" accept=".pdf" />
+    <button id="uploadBtn" onclick="uploadFile()">Upload &amp; Ingest</button>
+    <div id="status" class="muted">No document loaded.</div>
+  </div>
+
+  <div class="card">
+    <h2>Step 2 — Ask a Question</h2>
+    <input type="text" id="questionInput" placeholder="What does the document say about…" onkeydown="if(event.key==='Enter') askQuestion()" />
+    <button id="askBtn" onclick="askQuestion()">Ask</button>
+    <div id="answer"></div>
+    <div id="sources"></div>
+  </div>
+
+  <script>
+    async function uploadFile() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) { alert("Please choose a PDF file."); return; }
+      const statusEl = document.getElementById("status");
+      const btn = document.getElementById("uploadBtn");
+      statusEl.className = "muted";
+      statusEl.textContent = "Uploading and ingesting… (first run may take 1–2 min to download the embedding model)";
+      btn.disabled = true;
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch("/upload", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Upload failed");
+        statusEl.className = "ok";
+        statusEl.textContent = `✓ Ingested ${data.chunks} chunks from "${file.name}". Ready to query.`;
+      } catch (e) {
+        statusEl.className = "err";
+        statusEl.textContent = "Error: " + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function askQuestion() {
+      const question = document.getElementById("questionInput").value.trim();
+      if (!question) { alert("Please enter a question."); return; }
+      const answerEl = document.getElementById("answer");
+      const sourcesEl = document.getElementById("sources");
+      const btn = document.getElementById("askBtn");
+      answerEl.className = "muted";
+      answerEl.textContent = "Thinking…";
+      sourcesEl.textContent = "";
+      btn.disabled = true;
+      try {
+        const res = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Request failed");
+        answerEl.className = "";
+        answerEl.textContent = data.answer;
+        if (data.sources && data.sources.length) {
+          sourcesEl.textContent =
+            "Sources: " + data.sources.map((s) => `[${s.index}] Page ${s.page}`).join("  |  ");
+        }
+      } catch (e) {
+        answerEl.className = "err";
+        answerEl.textContent = "Error: " + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

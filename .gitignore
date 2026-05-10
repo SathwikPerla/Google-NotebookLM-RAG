@@ -1,2 +1,5 @@
 node_modules
 .env
+uploads/*.pdf
+uploads/*.txt
+uploads/[0-9]*

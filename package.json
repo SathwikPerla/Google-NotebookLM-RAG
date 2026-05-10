@@ -3,6 +3,7 @@
     "@anthropic-ai/sdk": "^0.95.1",
     "@google/generative-ai": "^0.24.1",
     "@huggingface/transformers": "^4.2.0",
+    "@langchain/classic": "^1.0.32",
     "@langchain/community": "^1.1.28",
     "@langchain/core": "^1.1.45",
     "@langchain/google-genai": "^2.1.30",
@@ -20,8 +21,9 @@
   "name": "google-notebooklm-rag",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
